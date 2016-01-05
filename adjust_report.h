@@ -3,6 +3,7 @@
 struct adjust_config_t {
     const char * sharekey;
     int          max_thread;
+    int          max_queue_buff_size;
 };
 
 typedef void(*adjust_on_report_t)(void *ud, int id, const char * json);
