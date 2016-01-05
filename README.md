@@ -1,2 +1,2 @@
 # adjust_reporter
-adjust server sdk(just for reporting puchasing)
+adjust server c++ apart of sdk (just for reporting puchasing)
