@@ -1,5 +1,11 @@
 #pragma once
 
+//this is just a part of adjust server sdk for event tracking
+//write by jj4jj@github -> resc@vip.qq.com
+//more detail info , please refer to as follow url:
+//https://docs.adjust.com/en/event-tracking/#deduplicating-purchase-events
+
+
 struct adjust_config_t {
     const char * sharekey;
     int          max_thread;
@@ -40,7 +46,7 @@ struct adjust_event_t {
 };
 
 
-int     adjust_init(adjust_config_t & conf);
+int     adjust_init(const adjust_config_t & conf);
 void    adjust_set_report_cb(adjust_on_report_t cb, void * ud);
 int     adjust_poll(int maxproc = 200);
 int     adjust_report(const adjust_event_t * evt);

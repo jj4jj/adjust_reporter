@@ -2,6 +2,9 @@
 #include "curl/curl.h"
 #include "mmqueue/mmqueue.h"
 #include <string>
+#include <cstring>
+#include <strings.h>
+#include <cstdarg>
 using namespace std;
 
 typedef void(*adjust_on_report_t)(void *ud, int id, const char * json);
@@ -47,7 +50,7 @@ static void _adjust_report(void * ctx, int idx, char * omsg, size_t * omsg_szp,
     }
 }
 
-int     adjust_init(adjust_config_t & conf){
+int     adjust_init(const adjust_config_t & conf){
     if (G.mmq){
         return -1;
     }
@@ -75,7 +78,7 @@ void    adjust_set_report_cb(adjust_on_report_t cb, void * ud){
     G.cb = cb;
     G.cb_ud = ud;
 }
-int     adjust_poll(int maxproc = 200){
+int     adjust_poll(int maxproc){
     static char _msg_buffer[4096];
     size_t _msg_sz = sizeof(_msg_buffer);
     while (maxproc--){
@@ -134,7 +137,6 @@ CLEAN_UP:
     return buff;
 }
 int     adjust_report(const adjust_event_t * evt){
-#warning  "todo"
     static char input_msg_buff[4096];
     adjust_work_input_t * input = (adjust_work_input_t *)input_msg_buff;
     if (G.seqid <= 0){
@@ -148,7 +150,7 @@ int     adjust_report(const adjust_event_t * evt){
         strcat(input->url, "?");
     }
     else {
-        strncpy(input_msg_buff, G.event_url.c_str());
+        strcpy(input_msg_buff, G.event_url.c_str());
         strcat(input->url, "?");
     }
 
