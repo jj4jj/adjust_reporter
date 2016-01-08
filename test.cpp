@@ -10,8 +10,8 @@ int main(int argc, char **argv)
     ac.sharekey = "/tmp";
     ac.max_thread = 2;
     ac.max_queue_buff_size = 1024 * 1024 * 16; //16MB
-    ac.reprot_event_url = "http://s2s.adjust.com/event";
-    ac.report_revenue_url = "http://s2s.adjust.com/revenue";
+    ac.reprot_event_url = "http://192.168.1.202/echo.php";//http://s2s.adjust.com/event";
+    ac.report_revenue_url = "http://192.168.1.202/echo.php";// http://s2s.adjust.com/revenue";
     int ret = adjust_init(ac);
     if (ret){
         return -1;

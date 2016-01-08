@@ -5,6 +5,7 @@
 #include <cstring>
 #include <strings.h>
 #include <cstdarg>
+#include <algorithm>
 using namespace std;
 
 typedef void(*adjust_on_report_t)(void *ud, int id, const char * json);
@@ -29,8 +30,18 @@ struct adjust_work_output_t {
     int         seqid;
     char        data[1];
 };
+#define ADJUST_REPORT_MAX_MSG_SZ        (512)
+#define ADJUST_RESPONSE_MAX_MSG_SZ       (256)
 static size_t write_to_output(char * data, size_t size, size_t nmemb, void *output){
-    memcpy(output, data, size*nmemb);
+    size_t w = std::min((int)(size*nmemb), ADJUST_RESPONSE_MAX_MSG_SZ);
+    memcpy(output, data, w);
+    if(w < ADJUST_RESPONSE_MAX_MSG_SZ){
+        ((char*)output)[w] = 0;
+    }
+    else {
+        ((char*)output)[ADJUST_RESPONSE_MAX_MSG_SZ-1] = 0;
+    }
+    return w;
 }
 static void _adjust_report(void * ctx, int idx, char * omsg, size_t * omsg_szp, 
                             const char * inmsg, size_t inmsg_sz){
@@ -49,7 +60,6 @@ static void _adjust_report(void * ctx, int idx, char * omsg, size_t * omsg_szp,
         return;
     }
 }
-
 int     adjust_init(const adjust_config_t & conf){
     if (G.mmq){
         return -1;
@@ -58,8 +68,8 @@ int     adjust_init(const adjust_config_t & conf){
     G.key = conf.sharekey;
     mmqueue_config_t mmconf;
     mmconf.key = (char*)G.key.data();
-    mmconf.max_input_msg_size = 512;
-    mmconf.max_output_msg_size = 128;
+    mmconf.max_input_msg_size = ADJUST_REPORT_MAX_MSG_SZ;
+    mmconf.max_output_msg_size = ADJUST_RESPONSE_MAX_MSG_SZ;
     mmconf.max_queue_size = conf.max_queue_buff_size / mmconf.max_input_msg_size;
     mmconf.max_worker = conf.max_thread;
     G.max_threads = conf.max_thread;
@@ -132,7 +142,6 @@ static const char * _make_url_param(char * buff, int buffsz, ...){
         }
     }
     va_end(ap);
-CLEAN_UP:
     curl_easy_cleanup(curl);
     return buff;
 }
@@ -194,17 +203,22 @@ int     adjust_report(const adjust_event_t * evt){
     const char * param = _make_url_param(input->url, sizeof(input_msg_buff) - sizeof(adjust_work_input_t),
         "app_token", evt->base.app_token, 
         "event_token", evt->base.event_token,
-        "s2s", 1,
+        "s2s", "1",
         "created_at", bufftime,
         udidk, udidv,
-        nullptr);
-    
+        nullptr, nullptr);
+    if(!param){
+        return -1;
+    }
     if (evt->type == adjust_event_t::REVENUE){
         param = _make_url_param(input->url, sizeof(input_msg_buff)-sizeof(adjust_work_input_t),
             "revenue", evt->revenue.revenue,
             "currency", evt->revenue.currency,
             "environment", evt->revenue.environment,
-            nullptr);
+            nullptr, nullptr);
+        if(!param){
+            return -1;
+        }
     }
     int ret = mmqueue_put(G.mmq, input_msg_buff, sizeof(adjust_work_input_t) + strlen(input->url));
     if (ret){
